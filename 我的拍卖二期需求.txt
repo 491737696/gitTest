@@ -1,0 +1,115 @@
+提醒表
+
+
+4个接口
+添加 ：http://paimai.jd.com/json/remind/add?id=111&remindType=2&phone=13545066190&isBeginRemind=1&isEndRemind=0
+取消 ： http://paimai.jd.com/json/remind/cancel?id=10610&remindType=2&isBeginRemind=0&isEndRemind=1
+查询当前用户有无提醒 ：http://paimai.jd.com/json/remind/has?id=102402749&remindType=1
+列表 ： http://paimai.jd.com/json/remind/list
+
+
+保证金支付对账worker
+
+
+
+
+
+
+参数校验  对参数进行校验
+修改查询有无提醒
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+	 * jsonp查询当前用户的拍卖提醒列表
+	 * @return 返回拍卖对象的json数组
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/list", method = {RequestMethod.GET,RequestMethod.POST})
+	public Object list(HttpServletRequest request){
+		CallerInfo callerInfo = Profiler.registerInfo("Web.paimai.haiguan.listRemind",true,true);
+		Map<String,Object> result = new HashMap<String,Object> ();
+		
+		try {
+			//获取用户pin,判断是否登录
+			String pin = JdLoginUtils.getPin(request);
+			if(StringUtils.isEmpty(pin)){
+				return new JSONPObject(request.getParameter("callback"),noLoginMessage());
+			}
+			
+			//提醒类型（1拍品，2专场）
+			Integer type = NumberUtils.toInt(request.getParameter("type"), 0);
+			//当前页
+			int pageNow = NumberUtils.toInt(request.getParameter("pageNow"), 1);  
+			//每页条数
+			int pageSize = NumberUtils.toInt(request.getParameter("pageSize"), 8);  
+			
+			//总记录数
+			Integer totalNum = paimaiRemindService.queryRemindCount(pin,type);
+			//列表数据
+			List<HashMap<String, Object>> data = paimaiRemindService.queryRemindList(pageNow,pageSize,pin,type);
+			
+			result.put("pageNow", pageNow);
+			result.put("pageSize", pageSize);
+			result.put("totalNum", totalNum);
+			result.put("data", data);
+			
+		} catch (Exception e) {
+			Profiler.functionError(callerInfo);
+			LOG.error("fail to list:查询用户拍卖提醒列表异常！",e);
+		}finally{
+			Profiler.registerInfoEnd(callerInfo);
+		}
+		return new JSONPObject(request.getParameter("callback"),result);
+	}
+	
+	/**
+	 * jsonp软删除拍卖提醒
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value = "/delete", method = {RequestMethod.GET,RequestMethod.POST})
+	public Object deleteRemind(HttpServletRequest request){
+		CallerInfo callerInfo = Profiler.registerInfo("Web.paimai.haiguan.deleteRemind",true,true);
+		Map<String,Object> result = new HashMap<String,Object> ();
+		
+		try {
+			//获取用户pin,判断是否登录
+			String pin = JdLoginUtils.getPin(request);
+			if(StringUtils.isEmpty(pin)){
+				return new JSONPObject(request.getParameter("callback"),noLoginMessage());
+			}
+			
+			Long id = NumberUtils.toLong(request.getParameter("id"),0);
+			
+			result.put("result", paimaiRemindService.delete(id));
+			
+		} catch (Exception e) {
+			result.put("result", false);
+			Profiler.functionError(callerInfo);
+			LOG.error("fail to deleteRemind:删除用户拍卖提醒列表异常！",e);
+		}finally{
+			Profiler.registerInfoEnd(callerInfo);
+		}
+		return new JSONPObject(request.getParameter("callback"),result);
+	}
+
+
+

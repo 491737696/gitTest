@@ -1,0 +1,92 @@
+开发后注意：
+1.注释pin的test赋值
+
+2015 plat-web dev_20160406
+
+2.spy.properties 把DEBUG还原成ERROR
+3.2015恢复调试删除的worker:
+	<!--拍卖结束数据-->
+	<ref bean="paimaiEndingProducerTrigger" />
+	<!--拍卖起拍数据-->
+	<ref bean="paimaiBeginingProducerTrigger" />
+	<!-- 实时降价worker -->
+	<ref bean="paimaiReducePriceTrigger"/>
+	<!-- sync product basic info from API -->
+	<ref bean="paimaiProductBasicInitTrigger"/>
+	<!-- 拍卖结束24小时后 清数据 -->
+	<ref bean="paimaiUserReferCleanTrigger"/>
+	<!-- 拍卖专场拍品信息排序 -->
+	<ref bean="paimaiAlbumProductSortTrigger"/>
+	<!-- 统计商铺再拍及历史拍品worker -->
+	<ref bean="paimaiVendorProductCountTrigger"/>
+	<!-- 清除部分数据的缓存 -->
+	<ref bean="clearDBAndCacheMinPriceJobTrigger"/>
+	<!-- 拍卖结束数据拓展worker
+	<ref bean="paimaiEndingProducerExtJobTrigger"/> -->
+	
+	<ref bean="clearPaimaiTreasureBoxJobTrigger"/>
+
+
+
+
+2015 plat-web dev_20160406
+spring-scheduler-context.xml 新增： 
+	1.<!-- JobDetail --> ：
+	<bean id="paimaiRemindJobDetail"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="paimaiRemindJob" />
+		<property name="targetMethod" value="execute" />
+		<property name="concurrent" value="false" />
+	</bean>
+	
+	2.!--  Trigger -->：
+	<bean id="paimaiRemindJobTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerBean">
+		<property name="jobDetail" ref="paimaiRemindJobDetail" />
+		<property name="startDelay" value="1000" />
+		<!-- repeat every 5 minute ????-->
+		<property name="repeatInterval" value="60000" />
+	</bean>
+	
+	3.<property name="triggers"> <list>：
+	<!-- 拍卖提醒worker -->
+    <ref bean="paimaiRemindJobTrigger"/>
+	
+2014  auction-web-front  paimai_phase2
+spring-config-jsf.xml新增：
+    <jsf:consumer id="auctionPlatJSFService" interface="com.jd.auctionplat.soa.service.AuctionPlatSAFService"
+                   protocol="jsf" alias="JSF_0.0.1" timeout="5000"/>
+				
+				
+=============================================================================================================================================
+auctionplat-ensure   auctionplat-ensure-worker   paimai_phase2				
+spring-scheduler-context.xml新增：
+
+	1.变量配置：
+	<!-- 保证金支付对账worker配置-->
+	<util:map id="ensureMoneyPayConfigMap" map-class="java.util.HashMap"
+	  	key-type="java.lang.String" value-type="java.lang.String">
+		<entry key="days" value="1"/>
+		<entry key="minutes" value="3"/>
+	</util:map>
+	
+	2.<!-- JobDetail -->:
+	<bean id="ensureMoneyPayConfirmJobDetail"
+		  class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="ensureMoneyPayConfirmJob" />
+		<property name="targetMethod" value="execute" />
+		<property name="concurrent" value="false" />
+	</bean>
+	
+	3.<!--  Trigger -->:
+	<bean id="ensureMoneyPayConfirmJobTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerBean">
+		<property name="jobDetail" ref="ensureMoneyPayConfirmJobDetail" />
+		<!-- 60 seconds -->
+		<property name="startDelay" value="1000" />
+		<!-- repeat every 1 minute ????-->
+		<property name="repeatInterval" value="60000" />
+	</bean>
+	
+	4.<property name="triggers"> <list>:
+	<!-- 保证金支付对账worker,对账消息的补充 -->
+	<ref bean="ensureMoneyPayConfirmJobTrigger" />
+	
